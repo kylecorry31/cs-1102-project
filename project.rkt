@@ -31,15 +31,47 @@
 
 |#
 
+#|
+Create red ball
+Create blue rectangle
+Move red ball until hit wall
+If red ball hit wall:
+  Wall disappear
+  Ball moves toward left edge until hit edge:
+    Ball stop
+
+
+graphic-object needs following properties:
+- location
+- size
+- color
+- visible?
+
+Cmds:
+add-graphic-object (graphic-object)
+remove-graphic-object (graphic-object)
+jump-graphic-object (graphic-object location)
+move-graphic-object (graphic-object delta)
+do-until-collision (graphic-object graphic-object list[cmd] list[cmd])
+do-forever (list[cmd])
+
+
+(add-graphic-object red-ball)
+(add-graphic-object blue-wall)
+(do-until-collision red-ball blue-wall (list (move-graphic-object red-ball ....))
+                    (list (do-until-collision red-ball left-edge (list (move-graphic-object red-ball ...)) empty)
+                          (remove-graphic-object blue-wall)))
+|#
+
 ;; a delta is (make-delta number number)
 (define-struct delta (x y))
 
 ;; a shape is either
-;;   - (make-rectangle posn number number), or
-;;   - (make-circle posn number)
+;;   - (make-rectangle posn number number symbol), or
+;;   - (make-circle posn number symbol)
 
-(define-struct rectangle (location width height))
-(define-struct circle (location radius))
+(define-struct rectangle (location width height color))
+(define-struct circle (location radius color))
 
 ;; a collision-object is either
 ;;  - a shape, or
@@ -50,22 +82,24 @@
 ;;   - (make-jumpcmd shape posn), or
 ;;   - (make-deletecmd shape), or
 ;;   - (make-createcmd shape), or
-;;   - (make-collidecmd shape collision-object cmd)
+;;   - (make-collidecmd shape collision-object list[cmd])
+;;   - (make-repeatcmds list[cmd])
 (define-struct movecmd (a-shape velocity))
 (define-struct jumpcmd (a-shape a-posn))
 (define-struct deletecmd (a-shape))
 (define-struct createcmd (a-shape))
-(define-struct collidecmd (a-shape collides-with a-cmd))
+(define-struct collidecmd (a-shape collides-with a-loc))
+(define-struct repeatcmds (a-loc))
 
 ;; an animated-scene is (make-animated-scene list[cmd])
 (define-struct animated-scene (cmdlist))
 
-(define scene1 (let ([my-circle (make-circle (make-posn 0 0) 10)]
-                     [my-square (make-rectangle (make-posn 100 50) 10 10)]
-                     [my-rect (make-rectangle (make-posn 50 100) 10 30)])
+(define scene1 (let ([my-circle (make-circle (make-posn 0 0) 10 'red)]
+                     [my-square (make-rectangle (make-posn 100 50 'blue) 10 10)]
+                     [my-rect (make-rectangle (make-posn 50 100 'green) 10 30)])
                  (make-animated-scene
                   (list (make-createcmd my-circle)
                         (make-createcmd my-square)
-                        (make-movecmd my-circle (make-delta 20 10))
-                        (make-collidecmd my-circle my-square (make-createcmd my-rect))
-                        (make-collidecmd my-circle my-rect (make-deletecmd my-circle))))))
+                        (make-repeatcmds (list (make-movecmd my-circle (make-delta 20 10))
+                                               (make-collidecmd my-circle my-square (list (make-createcmd my-rect)))
+                                               (make-collidecmd my-circle my-rect (list (make-deletecmd my-circle)))))))))
