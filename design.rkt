@@ -12,19 +12,23 @@
 (define-struct rectangle (location width height color visible?))
 (define-struct circle (location radius color visible?))
 
+;; a collision-object is either
+;; - a graphic-object, or
+;; - a symbol ('left-edge 'right-edge 'top-edge 'bottom-edge)
+
 
 ;; a cmd is either
 ;; - (make-add-cmd graphic-object)
 ;; - (make-remove-cmd graphic-object)
 ;; - (make-jump-cmd graphic-object posn)
 ;; - (make-move-cmd graphic-object delta)
-;; - (make-do-until-collision-cmd graphic-object graphic-object list[cmd] list[cmd])
+;; - (make-do-until-collision-cmd graphic-object collision-object list[cmd] list[cmd])
 ;; - (make-do-forever-cmd list[cmd])
 (define-struct add-cmd (shape))
 (define-struct remove-cmd (shape))
 (define-struct jump-cmd (shape location))
 (define-struct move-cmd (shape velocity))
-(define-struct do-until-collision-cmd (shape1 shape2 cmds-before cmds-after))
+(define-struct do-until-collision-cmd (shape1 collides-with cmds-before cmds-after))
 (define-struct do-forever-cmd (cmds))
 
 ;; a delta is (make-delta number number)
