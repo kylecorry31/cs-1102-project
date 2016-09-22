@@ -3,6 +3,9 @@
 #reader(lib "htdp-advanced-reader.ss" "lang")((modname design) (read-case-sensitive #t) (teachpacks ((lib "dir.rkt" "teachpack" "htdp") (lib "matrix.rkt" "teachpack" "htdp"))) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ((lib "dir.rkt" "teachpack" "htdp") (lib "matrix.rkt" "teachpack" "htdp")) #t)))
 ;; Kyle Corry
 
+(define WIDTH 1000)
+(define HEIGHT 500)
+
 ;; an animated-scene is (make-animated-scene list[cmd])
 (define-struct animated-scene (cmds))
 
@@ -34,7 +37,39 @@
 ;; a delta is (make-delta number number)
 (define-struct delta (x y))
 
-(define scene1 (let ([my-circle (make-circle (make-posn 0 0) 10 'red false)]
+(define scene1 (let ([red-circle (make-circle (make-posn 20 40) 10 'red false)]
+                     [blue-rect (make-rectangle (make-posn 160 40) 20 200 'blue false)])
+                 (make-animated-scene
+                  (list (make-add-cmd red-circle)
+                        (make-add-cmd blue-rect)
+                        (make-do-until-collision-cmd red-circle blue-rect
+                                                     (list (make-move-cmd red-circle (make-delta 45 10)))
+                                                     (list (make-remove-cmd blue-rect)
+                                                           (make-do-until-collision-cmd red-circle 'left
+                                                                                        (list (make-move-cmd red-circle (make-delta -160 10)))
+                                                                                        empty)))))))
+
+(define scene2 (let ([circ (make-circle (make-posn (random (+ 1 WIDTH)) (random (+ 1 HEIGHT))) 20 'purple false)])
+                 (make-animated-scene
+                  (list (make-add-cmd circ)
+                        (make-do-until-collision-cmd circ 'top (list (make-jump-cmd circ (make-posn (random (+ 1 WIDTH)) (random (+ 1 HEIGHT)))))
+                                                     empty)))))
+
+(define scene3 (let ([circ (make-circle (make-posn 40 20) 15 'orange false)]
+                     [gr-rect (make-rectangle (make-posn 30 100) 150 20 'green false)]
+                     [red-rect (make-rectangle (make-posn 160 10) 20 80 'red false)])
+                 (make-animated-scene
+                  (list (make-add-cmd circ)
+                        (make-add-cmd gr-rect)
+                        (make-do-until-collision-cmd circ gr-rect
+                                                     (list (make-move-cmd circ (make-delta 0 20)))
+                                                     (list (make-add-cmd red-rect)
+                                                           (make-do-until-collision-cmd circ red-rect
+                                                                                        (list (make-move-cmd circ (make-delta 10 0)))
+                                                                                        (list (make-jump-cmd circ (make-posn (random 211) (random 161)))))))))))
+
+
+(define scene4 (let ([my-circle (make-circle (make-posn 0 0) 10 'red false)]
                      [my-square (make-rectangle (make-posn 100 50) 10 10 'blue false)]
                      [my-rect (make-rectangle (make-posn 50 100) 10 30 'green false)])
                  (make-animated-scene
