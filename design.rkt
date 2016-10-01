@@ -66,6 +66,8 @@
 ;; a delta is (make-delta number number)
 (define-struct delta (x y))
 
+
+
 (define scene1 (let ([red-circle (make-circle (make-posn 20 40) 10 'red 'red-circle)]
                      [blue-rect (make-my-rect (make-posn 160 40) 20 200 'blue 'blue-rect)])
                  (make-animated-scene
@@ -73,13 +75,13 @@
                   (list (make-add-cmd 'red-circle)
                         (make-add-cmd 'blue-rect)
                         (make-do-until-collision-cmd 'red-circle 'blue-rect
-                                                     (list (make-move-cmd 'red-circle (make-delta 45 10)))
-                                                     (list (make-remove-cmd blue-rect)
+                                                     (list (make-move-cmd 'red-circle (make-delta 15 5)))
+                                                     (list (make-remove-cmd 'blue-rect)
                                                            (make-do-until-collision-cmd 'red-circle 'left-edge
-                                                                                        (list (make-move-cmd 'red-circle (make-delta -160 10)))
+                                                                                        (list (make-move-cmd 'red-circle (make-delta -16 10)))
                                                                                         empty)))))))
 
-(define scene2 (let ([circ (make-circle (make-random-posn WIDTH HEIGHT) 20 'purple 'circ)])
+(define scene2 (let ([circ (make-circle (make-posn 100 100) 20 'purple 'circ)])
                  (make-animated-scene
                   (list circ)
                   (list (make-add-cmd 'circ)
@@ -88,7 +90,7 @@
 
 (define scene3 (let ([circ (make-circle (make-posn 40 20) 15 'orange 'circ)]
                      [gr-rect (make-my-rect (make-posn 30 100) 150 20 'green 'gr-rect)]
-                     [red-rect (make-my-rect (make-posn 160 10) 20 80 'red 'red-rect)])
+                     [red-rect (make-my-rect (make-posn 160 50) 20 80 'red 'red-rect)])
                  (make-animated-scene
                   (list circ gr-rect red-rect)
                   (list (make-add-cmd 'circ)
@@ -132,6 +134,8 @@
 (define (run-animation an-animation width height)
   (begin
     (create-canvas width height)
+    (set! init-shapes empty)
+    (set! cmd-queue empty)
     (set-init-shapes (animated-scene-shapes-used an-animation))
     (set-cmd-queue (animated-scene-cmds an-animation) 0)
     (animation-loop (lambda (sn) (run-cmds cmd-queue sn)) (empty-scene width height))
@@ -183,6 +187,8 @@
                                   a-scene)]
           [(do-forever-cmd? cmd) (begin (set-cmd-queue (do-forever-cmd-cmds cmd) (+ 1 (max-cmd-id cmd-queue)))
                                         a-scene)]
+          [(do-until-collision-cmd? cmd) (begin (handle-collision-cmd a-cmd a-scene)
+                                                a-scene)]
           )))
 
 
@@ -275,12 +281,71 @@
          (remove-cmd-from-queue (cmd-var-id cv))
          ))
 
+;; handle-collision-cmd : cmd-var scene -> void
+;; Do a set of commands until a collision occurs, then run the rest of the commands after collision (side-effect: if collision, cmd will be deleted)
+(define (handle-collision-cmd cmd a-scene)
+  (let [(collision-cmd (cmd-var-cmd cmd))]
+    (cond[(collision? (do-until-collision-cmd-shape1 collision-cmd) (do-until-collision-cmd-collides-with collision-cmd) (image-width a-scene) (image-height a-scene))
+          (begin (set-cmd-queue (do-until-collision-cmd-cmds-after collision-cmd) (+ 1 (max-cmd-id cmd-queue)))
+                 (remove-cmd-from-queue (cmd-var-id cmd)))]
+         [else (run-cmds (map (lambda (c)
+                                (make-cmd-var (+ 1 (max-cmd-id cmd-queue)) c))
+                                (do-until-collision-cmd-cmds-before collision-cmd)) a-scene)])))
+
+
+;; shape-top-edge : graphic-object -> number
+;; Determines the top edge y value of a graphic-object
+(define (shape-top-edge shape)
+  (cond[(circle? shape) (- (posn-y (circle-init-location shape)) (circle-radius shape))]
+       [(my-rect? shape) (- (posn-y (my-rect-init-location shape)) (/ (my-rect-height shape) 2))]))
+
+;; shape-bottom-edge : graphic-object -> number
+;; Determines the bottom edge y value of a graphic-object
+(define (shape-bottom-edge shape)
+  (cond[(circle? shape) (+ (posn-y (circle-init-location shape)) (circle-radius shape))]
+       [(my-rect? shape) (+ (posn-y (my-rect-init-location shape)) (/ (my-rect-height shape) 2))]))
+
+;; shape-left-edge : graphic-object -> number
+;; Determines the left edge x value of a graphic-object
+(define (shape-left-edge shape)
+  (cond[(circle? shape) (- (posn-x (circle-init-location shape)) (circle-radius shape))]
+       [(my-rect? shape) (- (posn-x (my-rect-init-location shape)) (/ (my-rect-width shape) 2))]))
+
+;; shape-right-edge : graphic-object -> number
+;; Determines the right edge x value of a graphic-object
+(define (shape-right-edge shape)
+  (cond[(circle? shape) (+ (posn-x (circle-init-location shape)) (circle-radius shape))]
+       [(my-rect? shape) (+ (posn-x (my-rect-init-location shape)) (/ (my-rect-width shape) 2))]))
+
+;; graphic-objects-collide graphic-object graphic-object -> boolean
+;; Determines if two graphic objects are colliding
+(define (graphic-objects-collide? shape1 shape2)
+  (and (< (shape-top-edge shape1) (shape-bottom-edge shape2))
+       (< (shape-top-edge shape2) (shape-bottom-edge shape1))
+       (< (shape-left-edge shape1) (shape-right-edge shape2))
+       (< (shape-left-edge shape2) (shape-right-edge shape1))))
+
+;; collision? : symbol symbol number number -> boolean
+;; Determines if two objects collide
+(define (collision? shape1 collides-with scene-width scene-height)
+  (let [(shape (get-shape shape1))]
+    (cond[(symbol=? 'left-edge collides-with)
+          (< (shape-left-edge shape) 0)]
+         [(symbol=? 'right-edge collides-with)
+          (> (shape-right-edge shape) scene-width)]
+         [(symbol=? 'top-edge collides-with)
+          (< (shape-top-edge shape) 0)]
+         [(symbol=? 'bottom-edge collides-with)
+          (> (shape-bottom-edge shape) scene-height)]
+         [else (graphic-objects-collide? shape (get-shape collides-with))])))
+
+
 
 ;; draw-circle : circle scene -> scene
 ;; Draws a circle to the scene, returns the updated scene
 (define (draw-circle circ a-scene)
-  (place-image (ellipse (circle-radius circ)
-                        (circle-radius circ)
+  (place-image (ellipse (* 2 (circle-radius circ))
+                        (* 2 (circle-radius circ))
                         'solid
                         (circle-color circ))
                (posn-x (circle-init-location circ))
