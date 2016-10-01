@@ -213,34 +213,36 @@
                            false)
            (remove-cmd-from-queue (cmd-var-id a-cmd))
            (map remove-cmd-from-queue (map cmd-var-id (filter (lambda (cmd)
-                                                           (cond[(add-cmd? (cmd-var-cmd cmd)) (symbol=? graphic-obj (add-cmd-shape (cmd-var-cmd cmd)))]
-                                                                [else false]))
-                                                         cmd-queue))))))
+                                                                (cond[(add-cmd? (cmd-var-cmd cmd)) (symbol=? graphic-obj (add-cmd-shape (cmd-var-cmd cmd)))]
+                                                                     [else false]))
+                                                              cmd-queue))))))
 
 
 ;; jump-shape : cmd-var -> void
 ;; (side-effect) Moves a shape to a given position
 (define (jump-shape cv)
-  (set! init-shapes (map (lambda (shape)
-         (cond [(symbol=? (jump-cmd-shape (cmd-var-cmd cv)) (shape-var-name shape))
-                (let [(s (shape-var-shape shape))
-                      (loc (cond[(posn? (jump-cmd-location (cmd-var-cmd cv))) (jump-cmd-location (cmd-var-cmd cv))]
-                                [(random-posn? (jump-cmd-location (cmd-var-cmd cv)))
-                                 (let [(rand (jump-cmd-location (cmd-var-cmd cv)))]
-                                   (make-posn (random (random-posn-width rand)) (random (random-posn-height rand))))]))]
-                  
-                  (make-shape-var (shape-var-name shape) (cond[(circle? s) (make-circle loc
-                                                 (circle-radius s)
-                                                 (circle-color s)
-                                                 (circle-name s))]
-                       [(my-rect? s) (make-my-rect loc
-                                                   
-                                                   (my-rect-width s)
-                                                   (my-rect-height s)
-                                                   (my-rect-color s)
-                                                   (my-rect-name s))]) (shape-var-visible shape)))]
-               [else shape])
-         ) init-shapes)))
+  (begin (set! init-shapes (map (lambda (shape)
+                                  (cond [(symbol=? (jump-cmd-shape (cmd-var-cmd cv)) (shape-var-name shape))
+                                         (let [(s (shape-var-shape shape))
+                                               (loc (cond[(posn? (jump-cmd-location (cmd-var-cmd cv))) (jump-cmd-location (cmd-var-cmd cv))]
+                                                         [(random-posn? (jump-cmd-location (cmd-var-cmd cv)))
+                                                          (let [(rand (jump-cmd-location (cmd-var-cmd cv)))]
+                                                            (make-posn (random (random-posn-width rand)) (random (random-posn-height rand))))]))]
+                                           
+                                           (make-shape-var (shape-var-name shape) (cond[(circle? s) (make-circle loc
+                                                                                                                 (circle-radius s)
+                                                                                                                 (circle-color s)
+                                                                                                                 (circle-name s))]
+                                                                                       [(my-rect? s) (make-my-rect loc
+                                                                                                                   
+                                                                                                                   (my-rect-width s)
+                                                                                                                   (my-rect-height s)
+                                                                                                                   (my-rect-color s)
+                                                                                                                   (my-rect-name s))]) (shape-var-visible shape)))]
+                                        [else shape])
+                                  ) init-shapes))
+         (remove-cmd-from-queue (cmd-var-id cv))
+         ))
 
 ;; draw-circle : circle scene -> scene
 ;; Draws a circle to the scene, returns the updated scene
