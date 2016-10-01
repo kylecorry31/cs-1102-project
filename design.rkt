@@ -29,6 +29,7 @@
 |#
 
 (require "world-cs1102.rkt")
+(require test-engine/racket-tests)
 
 (define-syntax circ
   (syntax-rules ()
@@ -46,18 +47,30 @@
     [(add shape)
      (make-add-cmd 'shape)]))
 
+(define-syntax jump
+  (syntax-rules (to rand)
+    [(jump shape to x y)
+     (make-jump-cmd 'shape (make-posn x y))]
+    [(jump shape to rand x y)
+     (make-jump-cmd 'shape (make-random-posn x y))]))
+
+(define-syntax remove
+  (syntax-rules ()
+    [(remove shape)
+     (make-remove-cmd 'shape)]))
+
 (define-syntax forever
   (syntax-rules (do)
     [(forever do cmds ...)
-     (make-do-forever (list cmds ...))]))
+     (make-do-forever-cmd (list cmds ...))]))
 
 (define nothing empty)
 
 (define-syntax until
   (syntax-rules (hits do then)
-    [(until shape1 hits shape2 (do cmds-before ...) (then cmds-after ...)) 
+    [(until shape1 hits shape2 (do cmds-before ...) (then do cmds-after ...)) 
      (make-do-until-collision-cmd 'shape1 'shape2 (list cmds-before ...) (list cmds-after ...))]))
-    
+
 
 (define-syntax animation
   (syntax-rules (:)
@@ -112,64 +125,51 @@
 (define-struct delta (x y))
 
 
-(define animation1 (animation [(red-circle : circ 20 40 10 'red) (blue-rect : rect 160 40 20 200 'blue)]
-  (add red-circle)
-  (add blue-rect)
-  (until red-circle hits blue-rect
-                               (do (make-move-cmd 'red-circle (make-delta 15 5)))
-                               (then (make-remove-cmd 'blue-rect)
-                                     (until red-circle hits left-edge
-                                                                  (do (move red-circle by -16 10))
-                                                                  (then nothing))))))
+(define scene1 (animation [(red-circle : circ 20 40 10 'red) (blue-rect : rect 160 40 20 200 'blue)]
+                          (add red-circle)
+                          (add blue-rect)
+                          (until red-circle hits blue-rect
+                                 (do (move red-circle by 15 5))
+                                 (then do (remove blue-rect)
+                                       (until red-circle hits left-edge
+                                              (do (move red-circle by -16 10))
+                                              (then do nothing))))))
+
+(define scene2 (animation [(purple-circle : circ 100 100 20 'purple)]
+                          (add purple-circle)
+                          (until purple-circle hits top-edge
+                                 (do (jump purple-circle to rand WIDTH HEIGHT))
+                                 (then do nothing))))
+
+(define scene3 (animation [(orange-circle : circ 40 20 15 'orange) (gr-rect : rect 30 100 150 20 'green) (red-rect : rect 160 50 20 80 'red)]
+                          (add orange-circle)
+                          (add gr-rect)
+                          (until orange-circle hits gr-rect
+                                 (do (move orange-circle by 0 20))
+                                 (then do (add red-rect)
+                                       (until orange-circle hits red-rect
+                                              (do (move orange-circle by 10 0))
+                                              (then do (jump orange-circle to rand WIDTH HEIGHT)))))))
 
 
 
-(define scene1 (let ([red-circle (make-circle (make-posn 20 40) 10 'red 'red-circle)]
-                     [blue-rect (make-my-rect (make-posn 160 40) 20 200 'blue 'blue-rect)])
-                 (make-animated-scene
-                  (list red-circle blue-rect)
-                  (list (make-add-cmd 'red-circle)
-                        (make-add-cmd 'blue-rect)
-                        (make-do-until-collision-cmd 'red-circle 'blue-rect
-                                                     (list (make-move-cmd 'red-circle (make-delta 15 5)))
-                                                     (list (make-remove-cmd 'blue-rect)
-                                                           (make-do-until-collision-cmd 'red-circle 'left-edge
-                                                                                        (list (make-move-cmd 'red-circle (make-delta -16 10)))
-                                                                                        empty)))))))
-
-(define scene2 (let ([circ (make-circle (make-posn 100 100) 20 'purple 'circ)])
-                 (make-animated-scene
-                  (list circ)
-                  (list (make-add-cmd 'circ)
-                        (make-do-until-collision-cmd 'circ 'top-edge (list (make-jump-cmd 'circ (make-random-posn WIDTH HEIGHT)))
-                                                     empty)))))
-
-(define scene3 (let ([circ (make-circle (make-posn 40 20) 15 'orange 'circ)]
-                     [gr-rect (make-my-rect (make-posn 30 100) 150 20 'green 'gr-rect)]
-                     [red-rect (make-my-rect (make-posn 160 50) 20 80 'red 'red-rect)])
-                 (make-animated-scene
-                  (list circ gr-rect red-rect)
-                  (list (make-add-cmd 'circ)
-                        (make-add-cmd 'gr-rect)
-                        (make-do-until-collision-cmd 'circ 'gr-rect
-                                                     (list (make-move-cmd 'circ (make-delta 0 20)))
-                                                     (list (make-add-cmd 'red-rect)
-                                                           (make-do-until-collision-cmd 'circ 'red-rect
-                                                                                        (list (make-move-cmd 'circ (make-delta 10 0)))
-                                                                                        (list (make-jump-cmd 'circ (make-random-posn 210 160))))))))))
+(define scene4 (animation [(my-circle : circ 0 0 10 'red) (my-square : rect 100 50 10 10 'blue) (my-rectangle : rect 180 90 10 30 'green)]
+                          (add my-circle)
+                          (add my-square)
+                          (forever do (move my-circle by 10 5))
+                          (until my-circle hits my-square
+                                 (do nothing)
+                                 (then do (add my-rectangle)
+                                       (remove my-square)
+                                       (until my-circle hits my-rectangle
+                                              (do nothing)
+                                              (then do (remove my-circle)))))))
 
 
-(define scene4 (let ([my-circle (make-circle (make-posn 0 0) 10 'red 'my-circle)]
-                     [my-square (make-my-rect (make-posn 100 50) 10 10 'blue 'my-square)]
-                     [my-rect (make-my-rect (make-posn 180 90) 10 30 'green 'my-rect)])
-                 (make-animated-scene
-                  (list my-circle my-square my-rect)
-                  (list (make-add-cmd 'my-circle)
-                        (make-add-cmd 'my-square)
-                        (make-do-forever-cmd (list (make-move-cmd 'my-circle (make-delta 10 5))))
-                        (make-do-until-collision-cmd 'my-circle 'my-square empty (list (make-add-cmd 'my-rect)
-                                                                                       (make-do-until-collision-cmd 'my-circle 'my-rect empty
-                                                                                                                    (list (make-remove-cmd 'my-circle)))))))))
+
+
+
+
 
 
 
@@ -226,9 +226,11 @@
 ;; run-cmds : list[cmd] scene -> scene
 ;; Runs all animation cmds in a list of cmds
 (define (run-cmds loc init-scene)
-  (cond[(empty? loc) init-scene]
-       [(cons? loc)
-        (run-cmds (rest loc) (run-cmd (first loc) init-scene))]))
+  (begin
+    (printf "~a~n" loc)
+    (cond[(empty? loc) init-scene]
+         [(cons? loc)
+          (run-cmds (rest loc) (run-cmd (first loc) init-scene))])))
 
 ;; run-cmd : cmd-var scene -> scene
 ;; Runs a cmd on the scene and (side-effect) removes the one time cmd from the queue or repeats a repetive cmd
@@ -248,10 +250,14 @@
           )))
 
 
+(check-expect (max-cmd-id empty) 0)
+(check-expect (max-cmd-id (list (make-cmd-var 1 (add 'test)) (make-cmd-var 2 (add 'test)))) 2)
+
 ;; max-cmd-id : list[cmd-var] -> number
 ;; Gets the max cmd id from a list of cmd-vars
 (define (max-cmd-id cmds)
-  (apply max (map cmd-var-id cmds)))
+  (cond[(empty? cmds) 0]
+       [else (apply max (map cmd-var-id cmds))]))
 
 ;; get-shape : symbol -> graphic-obj
 ;; Gets the graphic obj from the init-shapes with the given name
@@ -439,6 +445,10 @@
 
 
 
+(check-expect (add-delta (make-delta 1 -1) (make-posn 0 0)) (make-posn 1 -1))
+(check-expect (add-delta (make-delta 1 -1) (make-posn 2 0)) (make-posn 3 -1))
+(check-expect (add-delta (make-delta -1 1) (make-posn 1 1)) (make-posn 0 2))
+
 ;; add-delta : delta posn -> posn
 ;; Adds a delta to a posn
 (define (add-delta vel loc)
@@ -448,8 +458,14 @@
                 (delta-y vel))))
 
 
-
+;; animation-loop : (scene -> scene) scene -> void (endless)
+;; Runs the animation forever with a 0.25 second delay between frames
 (define (animation-loop update-fn init-scene)
-  (begin (update-frame (update-fn init-scene))
-         (sleep/yield 0.25)
-         (animation-loop update-fn init-scene)))
+  (begin
+    (let [(new-scene (update-fn init-scene))]
+      (cond[(scene? new-scene) (update-frame new-scene)])
+      (sleep/yield 0.25)
+      (animation-loop update-fn init-scene))))
+
+;; Evaluates all check-expects
+(test)
