@@ -3,6 +3,35 @@
 #reader(lib "htdp-advanced-reader.ss" "lang")((modname design) (read-case-sensitive #t) (teachpacks ((lib "dir.rkt" "teachpack" "htdp") (lib "matrix.rkt" "teachpack" "htdp"))) (htdp-settings #(#t constructor repeating-decimal #t #t none #f ((lib "dir.rkt" "teachpack" "htdp") (lib "matrix.rkt" "teachpack" "htdp")) #t)))
 ;; Kyle Corry
 
+#|
+1. What kind of data is this language designed to process?
+
+   Shapes are the data. They have different sizes, shapes (circle or rectangle),
+   and positions.
+
+
+2. What operations can someone perform on the data?
+
+   Animations act on the data which can move, jump, delete, create,
+   or respond to shape collisions.
+
+
+3. What control operators do I need to sequence operations?
+
+   Shapes are displayed by their order (linear), and the collision operation
+   can call another operation depending on whether the shape is colliding with
+   something.
+
+
+4. What work is the language saving the programmer from doing?
+
+   The language should save the programmer from definining what makes a collision
+   It should also save the programmer from needing to draw the shapes to the screen and
+   and manually moving shapes pixelwise.
+
+|#
+
+;; To be used on the canvas later, and for examples
 (define WIDTH 1000)
 (define HEIGHT 500)
 
