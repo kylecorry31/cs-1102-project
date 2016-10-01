@@ -179,8 +179,17 @@
                                     a-scene)]
           [(jump-cmd? cmd) (begin (jump-shape a-cmd)
                                   a-scene)]
+          [(move-cmd? cmd) (begin (move-shape a-cmd)
+                                  a-scene)]
+          [(do-forever-cmd? cmd) (begin (set-cmd-queue (do-forever-cmd-cmds cmd) (+ 1 (max-cmd-id cmd-queue)))
+                                        a-scene)]
           )))
 
+
+;; max-cmd-id : list[cmd-var] -> number
+;; Gets the max cmd id from a list of cmd-vars
+(define (max-cmd-id cmds)
+  (apply max (map cmd-var-id cmds)))
 
 ;; get-shape : symbol -> graphic-obj
 ;; Gets the graphic obj from the init-shapes with the given name
@@ -244,6 +253,29 @@
          (remove-cmd-from-queue (cmd-var-id cv))
          ))
 
+;; move-shape : cmd-var -> void
+;; (side-effect) Moves a shape by a given delta
+(define (move-shape cv)
+  (begin (set! init-shapes (map (lambda (shape)
+                                  (cond [(symbol=? (move-cmd-shape (cmd-var-cmd cv)) (shape-var-name shape))
+                                         (let [(s (shape-var-shape shape))]
+                                           (make-shape-var (shape-var-name shape) (cond[(circle? s) (make-circle (add-delta (move-cmd-velocity (cmd-var-cmd cv))
+                                                                                                                            (circle-init-location s))
+                                                                                                                 (circle-radius s)
+                                                                                                                 (circle-color s)
+                                                                                                                 (circle-name s))]
+                                                                                       [(my-rect? s) (make-my-rect (add-delta (move-cmd-velocity (cmd-var-cmd cv))
+                                                                                                                              (my-rect-init-location s))
+                                                                                                                   (my-rect-width s)
+                                                                                                                   (my-rect-height s)
+                                                                                                                   (my-rect-color s)
+                                                                                                                   (my-rect-name s))]) (shape-var-visible shape)))]
+                                        [else shape])
+                                  ) init-shapes))
+         (remove-cmd-from-queue (cmd-var-id cv))
+         ))
+
+
 ;; draw-circle : circle scene -> scene
 ;; Draws a circle to the scene, returns the updated scene
 (define (draw-circle circ a-scene)
@@ -286,7 +318,13 @@
 
 
 
-
+;; add-delta : delta posn -> posn
+;; Adds a delta to a posn
+(define (add-delta vel loc)
+  (make-posn (+ (posn-x loc)
+                (delta-x vel))
+             (+ (posn-y loc)
+                (delta-y vel))))
 
 
 
