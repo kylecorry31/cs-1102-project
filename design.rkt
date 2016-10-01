@@ -30,6 +30,51 @@
 
 (require "world-cs1102.rkt")
 
+(define-syntax circ
+  (syntax-rules ()
+    [(circle x y radius color name)
+     (make-circle (make-posn x y) radius color name)]))
+
+(define-syntax rect
+  (syntax-rules ()
+    [(my-rect x y width height color name)
+     (make-my-rect (make-posn x y) width height color name)]))
+
+
+(define-syntax add
+  (syntax-rules ()
+    [(add shape)
+     (make-add-cmd 'shape)]))
+
+(define-syntax forever
+  (syntax-rules (do)
+    [(forever do cmds ...)
+     (make-do-forever (list cmds ...))]))
+
+(define nothing empty)
+
+(define-syntax until
+  (syntax-rules (hits do then)
+    [(until shape1 hits shape2 (do cmds-before ...) (then cmds-after ...)) 
+     (make-do-until-collision-cmd 'shape1 'shape2 (list cmds-before ...) (list cmds-after ...))]))
+    
+
+(define-syntax animation
+  (syntax-rules (:)
+    [(animation [(shape-name : shape ...) ...]
+                cmds ...)
+     (let [(shape-name (shape ... 'shape-name)) ...]
+       (make-animated-scene (list shape-name ...)
+                            (list cmds ...))
+       )]))
+
+
+(define-syntax move
+  (syntax-rules (by)
+    [(move shape by x y)
+     (make-move-cmd 'shape (make-delta x y))]))
+
+
 ;; To be used on the canvas later, and for examples
 (define WIDTH 400)
 (define HEIGHT 350)
@@ -65,6 +110,17 @@
 
 ;; a delta is (make-delta number number)
 (define-struct delta (x y))
+
+
+(define animation1 (animation [(red-circle : circ 20 40 10 'red) (blue-rect : rect 160 40 20 200 'blue)]
+  (add red-circle)
+  (add blue-rect)
+  (until red-circle hits blue-rect
+                               (do (make-move-cmd 'red-circle (make-delta 15 5)))
+                               (then (make-remove-cmd 'blue-rect)
+                                     (until red-circle hits left-edge
+                                                                  (do (move red-circle by -16 10))
+                                                                  (then nothing))))))
 
 
 
