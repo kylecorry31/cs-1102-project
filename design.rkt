@@ -105,7 +105,7 @@
 
 (define scene4 (let ([my-circle (make-circle (make-posn 0 0) 10 'red 'my-circle)]
                      [my-square (make-my-rect (make-posn 100 50) 10 10 'blue 'my-square)]
-                     [my-rect (make-my-rect (make-posn 50 100) 10 30 'green 'my-rect)])
+                     [my-rect (make-my-rect (make-posn 180 90) 10 30 'green 'my-rect)])
                  (make-animated-scene
                   (list my-circle my-square my-rect)
                   (list (make-add-cmd 'my-circle)
