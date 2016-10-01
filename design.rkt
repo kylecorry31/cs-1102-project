@@ -181,8 +181,10 @@
 ;; a cmd-var is (make-cmd-var number cmd)
 (define-struct cmd-var (id cmd))
 
+;; Holds all of the shapes used for the animations
 (define init-shapes empty)
 
+;; Holds a queue of commands used for the animations
 (define cmd-queue empty)
 
 ;; run-animation : animated-scene number number -> void
@@ -250,11 +252,13 @@
           )))
 
 
-(check-expect (max-cmd-id empty) 0)
-(check-expect (max-cmd-id (list (make-cmd-var 1 (add 'test)) (make-cmd-var 2 (add 'test)))) 2)
 
 ;; max-cmd-id : list[cmd-var] -> number
 ;; Gets the max cmd id from a list of cmd-vars
+(check-expect (max-cmd-id empty) 0)
+(check-expect (max-cmd-id (list (make-cmd-var 1 (add 'test)) (make-cmd-var 2 (add 'test)))) 2)
+(check-expect (max-cmd-id (list (make-cmd-var 1 (add 'testing)))) 1)
+
 (define (max-cmd-id cmds)
   (cond[(empty? cmds) 0]
        [else (apply max (map cmd-var-id cmds))]))
@@ -357,30 +361,50 @@
 
 ;; shape-top-edge : graphic-object -> number
 ;; Determines the top edge y value of a graphic-object
+(check-expect (shape-top-edge (circ 0 0 5 'red 'circ)) -5)
+(check-expect (shape-top-edge (rect 0 0 10 10 'red 'rect)) -5)
+(check-expect (shape-top-edge (circ 10 10 10 'red 'circ)) 0)
+
 (define (shape-top-edge shape)
   (cond[(circle? shape) (- (posn-y (circle-init-location shape)) (circle-radius shape))]
        [(my-rect? shape) (- (posn-y (my-rect-init-location shape)) (/ (my-rect-height shape) 2))]))
 
 ;; shape-bottom-edge : graphic-object -> number
 ;; Determines the bottom edge y value of a graphic-object
+(check-expect (shape-bottom-edge (circ 0 0 5 'red 'circ)) 5)
+(check-expect (shape-bottom-edge (rect 0 0 10 10 'red 'rect)) 5)
+(check-expect (shape-bottom-edge (circ 10 10 10 'red 'circ)) 20)
+
 (define (shape-bottom-edge shape)
   (cond[(circle? shape) (+ (posn-y (circle-init-location shape)) (circle-radius shape))]
        [(my-rect? shape) (+ (posn-y (my-rect-init-location shape)) (/ (my-rect-height shape) 2))]))
 
 ;; shape-left-edge : graphic-object -> number
 ;; Determines the left edge x value of a graphic-object
+(check-expect (shape-left-edge (circ 0 0 5 'red 'circ)) -5)
+(check-expect (shape-left-edge (rect 0 0 10 10 'red 'rect)) -5)
+(check-expect (shape-left-edge (circ 10 10 10 'red 'circ)) 0)
+
 (define (shape-left-edge shape)
   (cond[(circle? shape) (- (posn-x (circle-init-location shape)) (circle-radius shape))]
        [(my-rect? shape) (- (posn-x (my-rect-init-location shape)) (/ (my-rect-width shape) 2))]))
 
 ;; shape-right-edge : graphic-object -> number
 ;; Determines the right edge x value of a graphic-object
+(check-expect (shape-right-edge (circ 0 0 5 'red 'circ)) 5)
+(check-expect (shape-right-edge (rect 0 0 10 10 'red 'rect)) 5)
+(check-expect (shape-right-edge (circ 10 10 10 'red 'circ)) 20)
+
 (define (shape-right-edge shape)
   (cond[(circle? shape) (+ (posn-x (circle-init-location shape)) (circle-radius shape))]
        [(my-rect? shape) (+ (posn-x (my-rect-init-location shape)) (/ (my-rect-width shape) 2))]))
 
 ;; graphic-objects-collide graphic-object graphic-object -> boolean
 ;; Determines if two graphic objects are colliding
+(check-expect (graphic-objects-collide? (circ 0 0 5 'red 'circ) (rect 0 0 10 10 'red 'rect)) true)
+(check-expect (graphic-objects-collide? (circ 0 0 5 'red 'circ) (rect 5 5 10 10 'red 'rect)) true)
+(check-expect (graphic-objects-collide? (circ 0 0 5 'red 'circ) (rect 15 15 10 10 'red 'rect)) false)
+
 (define (graphic-objects-collide? shape1 shape2)
   (and (< (shape-top-edge shape1) (shape-bottom-edge shape2))
        (< (shape-top-edge shape2) (shape-bottom-edge shape1))
@@ -445,12 +469,13 @@
 
 
 
+
+;; add-delta : delta posn -> posn
+;; Adds a delta to a posn
 (check-expect (add-delta (make-delta 1 -1) (make-posn 0 0)) (make-posn 1 -1))
 (check-expect (add-delta (make-delta 1 -1) (make-posn 2 0)) (make-posn 3 -1))
 (check-expect (add-delta (make-delta -1 1) (make-posn 1 1)) (make-posn 0 2))
 
-;; add-delta : delta posn -> posn
-;; Adds a delta to a posn
 (define (add-delta vel loc)
   (make-posn (+ (posn-x loc)
                 (delta-x vel))
