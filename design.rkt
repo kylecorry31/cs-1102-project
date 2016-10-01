@@ -223,12 +223,17 @@
 (define (jump-shape cv)
   (set! init-shapes (map (lambda (shape)
          (cond [(symbol=? (jump-cmd-shape (cmd-var-cmd cv)) (shape-var-name shape))
-                (let [(s (shape-var-shape shape))]
-                  (make-shape-var (shape-var-name shape) (cond[(circle? s) (make-circle (jump-cmd-location (cmd-var-cmd cv))
+                (let [(s (shape-var-shape shape))
+                      (loc (cond[(posn? (jump-cmd-location (cmd-var-cmd cv))) (jump-cmd-location (cmd-var-cmd cv))]
+                                [(random-posn? (jump-cmd-location (cmd-var-cmd cv)))
+                                 (let [(rand (jump-cmd-location (cmd-var-cmd cv)))]
+                                   (make-posn (random (random-posn-width rand)) (random (random-posn-height rand))))]))]
+                  
+                  (make-shape-var (shape-var-name shape) (cond[(circle? s) (make-circle loc
                                                  (circle-radius s)
                                                  (circle-color s)
                                                  (circle-name s))]
-                       [(my-rect? s) (make-my-rect (jump-cmd-location (cmd-var-cmd cv))
+                       [(my-rect? s) (make-my-rect loc
                                                    
                                                    (my-rect-width s)
                                                    (my-rect-height s)
