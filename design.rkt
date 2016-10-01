@@ -135,7 +135,7 @@
     (set-init-shapes (animated-scene-shapes-used an-animation))
     (set-cmd-queue (animated-scene-cmds an-animation) 0)
     (animation-loop (lambda (sn) (run-cmds cmd-queue sn)) (empty-scene width height))
-                  (void)))
+    (void)))
 
 
 ;; set-cmd-queue : list[cmd] number -> void
@@ -147,7 +147,7 @@
                                 cmd-queue
                                 (list (make-cmd-var starting-id (first cmds)))))
                (set-cmd-queue (rest cmds) (+ 1 starting-id)))]))
-                                       
+
 
 
 ;; set-init-shapes : list[graphic-object] -> void
@@ -156,10 +156,10 @@
   (cond[(empty? lgo) empty]
        [(cons? lgo)
         (begin (set! init-shapes (append init-shapes
-                (list (make-shape-var (cond[(circle? (first lgo)) (circle-name (first lgo))]
-                                           [(my-rect? (first lgo)) (my-rect-name (first lgo))])
-                                (first lgo)
-                                false))))
+                                         (list (make-shape-var (cond[(circle? (first lgo)) (circle-name (first lgo))]
+                                                                    [(my-rect? (first lgo)) (my-rect-name (first lgo))])
+                                                               (first lgo)
+                                                               false))))
                (set-init-shapes (rest lgo)))]))
 
 
@@ -174,17 +174,19 @@
 ;; Runs a cmd on the scene and (side-effect) removes the one time cmd from the queue or repeats a repetive cmd
 (define (run-cmd a-cmd a-scene)
   (let [(cmd (cmd-var-cmd a-cmd))]
-  (cond [(add-cmd? cmd) (add-shape a-cmd a-scene)]
-        [(remove-cmd? cmd) (begin (remove-shape a-cmd)
+    (cond [(add-cmd? cmd) (add-shape a-cmd a-scene)]
+          [(remove-cmd? cmd) (begin (remove-shape a-cmd)
                                     a-scene)]
-        )))
+          [(jump-cmd? cmd) (begin (jump-shape a-cmd)
+                                  a-scene)]
+          )))
 
 
 ;; get-shape : symbol -> graphic-obj
 ;; Gets the graphic obj from the init-shapes with the given name
 (define (get-shape name)
   (shape-var-shape (first (filter (lambda (var)
-                   (symbol=? (shape-var-name var) name)) init-shapes))))
+                                    (symbol=? (shape-var-name var) name)) init-shapes))))
 
 ;; add-shape : cmd-var scene -> scene
 ;; Adds a graphic-object to the scene, (side-effect) removes the add-cmd from the queue
@@ -197,9 +199,9 @@
         (set-visibility (cond[(circle? graphic-obj) (circle-name graphic-obj)]
                              [(my-rect? graphic-obj) (my-rect-name graphic-obj)]
                              )
-                              true)
-             ;;(remove-cmd-from-queue (cmd-var-id a-cmd))
-             updated-scene))))
+                        true)
+        ;;(remove-cmd-from-queue (cmd-var-id a-cmd))
+        updated-scene))))
 
 
 ;; remove-shape : cmd-var -> void
@@ -207,10 +209,33 @@
 (define (remove-shape a-cmd)
   (let [(graphic-obj (remove-cmd-shape (cmd-var-cmd a-cmd)))]
     
-    (begin (set-visiblility graphic-obj
-                            false)
-           ;;(remove-cmd-from-queue (cmd-var-id a-cmd))
-           )))
+    (begin (set-visibility graphic-obj
+                           false)
+           (remove-cmd-from-queue (cmd-var-id a-cmd))
+           (map remove-cmd-from-queue (map cmd-var-id (filter (lambda (cmd)
+                                                           (cond[(add-cmd? (cmd-var-cmd cmd)) (symbol=? graphic-obj (add-cmd-shape (cmd-var-cmd cmd)))]
+                                                                [else false]))
+                                                         cmd-queue))))))
+
+
+;; jump-shape : cmd-var -> void
+;; (side-effect) Moves a shape to a given position
+(define (jump-shape cv)
+  (set! init-shapes (map (lambda (shape)
+         (cond [(symbol=? (jump-cmd-shape (cmd-var-cmd cv)) (shape-var-name shape))
+                (let [(s (shape-var-shape shape))]
+                  (make-shape-var (shape-var-name shape) (cond[(circle? s) (make-circle (jump-cmd-location (cmd-var-cmd cv))
+                                                 (circle-radius s)
+                                                 (circle-color s)
+                                                 (circle-name s))]
+                       [(my-rect? s) (make-my-rect (jump-cmd-location (cmd-var-cmd cv))
+                                                   
+                                                   (my-rect-width s)
+                                                   (my-rect-height s)
+                                                   (my-rect-color s)
+                                                   (my-rect-name s))]) (shape-var-visible shape)))]
+               [else shape])
+         ) init-shapes)))
 
 ;; draw-circle : circle scene -> scene
 ;; Draws a circle to the scene, returns the updated scene
@@ -227,9 +252,9 @@
 ;; Draws a my-rect to the scene, returns the updated scene
 (define (draw-my-rect rect a-scene)
   (place-image (rectangle (my-rect-width rect)
-                        (my-rect-height rect)
-                        'solid
-                        (my-rect-color rect))
+                          (my-rect-height rect)
+                          'solid
+                          (my-rect-color rect))
                (posn-x (my-rect-init-location rect))
                (posn-y (my-rect-init-location rect))
                a-scene))
@@ -251,7 +276,7 @@
   (set! cmd-queue (filter (lambda (cv)
                             (not (= id (cmd-var-id cv)))
                             ) cmd-queue)))
-                        
+
 
 
 
