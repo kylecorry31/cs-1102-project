@@ -31,8 +31,8 @@
 (require "world-cs1102.rkt")
 
 ;; To be used on the canvas later, and for examples
-(define WIDTH 1000)
-(define HEIGHT 500)
+(define WIDTH 400)
+(define HEIGHT 350)
 
 ;; an animated-scene is (make-animated-scene list[graphic-object] list[cmd])
 (define-struct animated-scene (shapes-used cmds))
@@ -110,7 +110,7 @@
                   (list my-circle my-square my-rect)
                   (list (make-add-cmd 'my-circle)
                         (make-add-cmd 'my-square)
-                        (make-do-forever-cmd (list (make-move-cmd 'my-circle (make-delta 20 10))))
+                        (make-do-forever-cmd (list (make-move-cmd 'my-circle (make-delta 10 5))))
                         (make-do-until-collision-cmd 'my-circle 'my-square empty (list (make-add-cmd 'my-rect)
                                                                                        (make-do-until-collision-cmd 'my-circle 'my-rect empty
                                                                                                                     (list (make-remove-cmd 'my-circle)))))))))
@@ -290,7 +290,7 @@
                  (remove-cmd-from-queue (cmd-var-id cmd)))]
          [else (run-cmds (map (lambda (c)
                                 (make-cmd-var (+ 1 (max-cmd-id cmd-queue)) c))
-                                (do-until-collision-cmd-cmds-before collision-cmd)) a-scene)])))
+                              (do-until-collision-cmd-cmds-before collision-cmd)) a-scene)])))
 
 
 ;; shape-top-edge : graphic-object -> number
