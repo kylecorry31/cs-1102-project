@@ -228,11 +228,9 @@
 ;; run-cmds : list[cmd] scene -> scene
 ;; Runs all animation cmds in a list of cmds
 (define (run-cmds loc init-scene)
-  (begin
-    (printf "~a~n" loc)
     (cond[(empty? loc) init-scene]
          [(cons? loc)
-          (run-cmds (rest loc) (run-cmd (first loc) init-scene))])))
+          (run-cmds (rest loc) (run-cmd (first loc) init-scene))]))
 
 ;; run-cmd : cmd-var scene -> scene
 ;; Runs a cmd on the scene and (side-effect) removes the one time cmd from the queue or repeats a repetive cmd
@@ -266,8 +264,11 @@
 ;; get-shape : symbol -> graphic-obj
 ;; Gets the graphic obj from the init-shapes with the given name
 (define (get-shape name)
-  (shape-var-shape (first (filter (lambda (var)
-                                    (symbol=? (shape-var-name var) name)) init-shapes))))
+  (let [(found-shape (filter (lambda (var)
+                                    (symbol=? (shape-var-name var) name)) init-shapes))]
+    (if (empty? found-shape)
+        (error (format "~a is not a valid shape name" name))
+        (shape-var-shape (first found-shape)))))
 
 ;; add-shape : cmd-var scene -> scene
 ;; Adds a graphic-object to the scene, (side-effect) removes the add-cmd from the queue
