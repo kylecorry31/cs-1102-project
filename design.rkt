@@ -1,6 +1,46 @@
 ;; Kyle Corry
 
 #|
+1.	In order to run my animation program, you must execute the following
+ command after compiling the code with Pretty Big language support:
+
+(run-animation scene1)
+
+The animations provided are scene1, scene2, scene3, and scene4 where the first 3 scenes
+ are the examples that were supplied with the project and scene4 is my own example animation.
+ After the animation is complete, close the animation window and hit stop. Then recompile the
+ code and run the next example. 
+
+2.	All required features are working without issues in my implementation of this project.
+ The language supports the use of repeated commands (do-forever and until-collision) as well as
+ all of the basic commands such as add, remove, move, and jump. 
+
+3.	I did not change my design since the version which I submitted for the design deadline.
+ I was easily able to implement every portion of the language in the interpreter because I expected that
+ I would need variables in the interpreter when I did the design of the language
+ (and thus used symbols for names of shapes). The only way the language was changed was through the
+ usage of macros (which technically didn’t change the underlying design)
+ as I wanted natural language based animation code. 
+
+4.	I think the collision handling could probably be cleaner in my implementation
+ because as of right not there are a good deal of checks that need to be performed
+ on the shapes to ensure that they are either a circle or a rect or an edge.
+ I abstracted this away a bit by using the get shape edge functions to produce the position
+ of the sides, but I feel it could have been done better. I also think the language could be
+ simplified when creating the shapes, maybe the macros should have allowed that with add commands
+ instead of listing the shapes used at the top of the animation. 
+
+
+
+
+
+
+
+|#
+
+
+#| Design of the language analysis
+
 1. What kind of data is this language designed to process?
 
    Shapes are the data. They have different sizes, shapes (circle or my-rect),
